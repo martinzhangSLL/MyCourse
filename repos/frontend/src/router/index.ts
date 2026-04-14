@@ -44,6 +44,19 @@ router.beforeEach((to, _from, next) => {
     return
   }
 
+  if (to.meta.role && authStore.user?.role !== to.meta.role) {
+    if (authStore.user?.role === 'admin') {
+      next({ name: 'Admin' })
+    } else if (authStore.user?.role === 'teacher') {
+      next({ name: 'Teacher' })
+    } else if (authStore.user?.role === 'student') {
+      next({ name: 'Student' })
+    } else {
+      next({ name: 'Login' })
+    }
+    return
+  }
+
   if (to.name === 'Login' && authStore.isAuthenticated) {
     const role = authStore.user?.role
     if (role === 'admin') {
