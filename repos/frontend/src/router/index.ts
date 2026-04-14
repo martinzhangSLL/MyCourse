@@ -42,19 +42,19 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'courses',
         name: 'AdminCourses',
-        component: () => import('@/views/admin/Dashboard.vue'),
+        component: () => import('@/views/admin/CourseManage.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
         path: 'config',
         name: 'AdminConfig',
-        component: () => import('@/views/admin/Dashboard.vue'),
+        component: () => import('@/views/admin/ConfigManage.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
         path: 'settlement',
         name: 'AdminSettlement',
-        component: () => import('@/views/admin/Dashboard.vue'),
+        component: () => import('@/views/admin/Settlement.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       }
     ]
