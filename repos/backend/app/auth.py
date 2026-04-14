@@ -1,10 +1,11 @@
 import os
-import secrets
 from datetime import datetime, timedelta
 
 import jwt
 
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", secrets.token_hex(32))
+SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("JWT_SECRET_KEY environment variable must be set")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 

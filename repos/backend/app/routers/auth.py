@@ -2,21 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.auth import create_access_token
-from app.database import SessionLocal
 from app.models.models import Teacher, Config
 from app.schemas.auth import LoginRequest, LoginResponse, UserResponse
 from app.utils.security import verify_password
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_db
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 def get_admin_password(db: Session) -> str:

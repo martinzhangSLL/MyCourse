@@ -63,6 +63,12 @@ async function handleLogin() {
   error.value = ''
   loading.value = true
 
+  if (!form.username || !form.password) {
+    error.value = '请输入账号和密码'
+    loading.value = false
+    return
+  }
+
   try {
     const response = await api.post('/auth/login', {
       username: form.username,
