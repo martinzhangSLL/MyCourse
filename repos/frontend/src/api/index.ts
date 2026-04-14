@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { useAuthStore } from '@/stores/auth'
-import { router } from '@/router'
+import router from '@/router'
 
 const api: AxiosInstance = axios.create({
   baseURL: '/api',
