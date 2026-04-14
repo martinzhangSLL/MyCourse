@@ -1,6 +1,12 @@
 from contextlib import asynccontextmanager
+import logging
 from fastapi import FastAPI
 from app.database import Base, engine, SessionLocal
+from app.utils.security import get_default_settlement_code, get_default_init_code
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 # Placeholder for routers - will be imported when routes are created
@@ -18,8 +24,8 @@ async def lifespan(app: FastAPI):
         from app.models.models import Config
 
         default_configs = [
-            {"key": "settlement_code", "value": "ADMIN123"},
-            {"key": "init_code", "value": "INIT456"},
+            {"key": "settlement_code", "value": get_default_settlement_code()},
+            {"key": "init_code", "value": get_default_init_code()},
             {"key": "reasons", "value": '["考试","作业","荣誉","其他"]'},
         ]
 
@@ -31,7 +37,7 @@ async def lifespan(app: FastAPI):
         db.commit()
     except Exception as e:
         db.rollback()
-        print(f"Error initializing config: {e}")
+        logger.warning(f"Config initialization error: {e}")
     finally:
         db.close()
 
