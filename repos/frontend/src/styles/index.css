@@ -1,0 +1,47 @@
+:root {
+  --color-primary: #22c55e;
+  --color-primary-dark: #16a34a;
+  --color-bg: #f0fdf4;
+  --color-surface: #ffffff;
+  --color-border: #86efac;
+  --color-text: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-score-plus: #22c55e;
+  --color-score-minus: #ef4444;
+
+  --font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--color-primary);
+  --el-button-border-color: var(--color-primary);
+  --el-button-hover-bg-color: var(--color-primary-dark);
+  --el-button-hover-border-color: var(--color-primary-dark);
+}
+
+.el-menu--horizontal .el-menu-item.is-active {
+  border-bottom-color: var(--color-primary);
+}
+
+.el-input__wrapper.is-focus {
+  --el-input-focus-border-color: var(--color-primary);
+}
