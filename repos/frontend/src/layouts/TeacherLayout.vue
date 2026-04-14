@@ -5,7 +5,7 @@
     </el-aside>
     <el-container>
       <el-header class="teacher-header">
-        <span class="title">初中班级积分管理系统</span>
+        <span class="title">{{ authStore.user?.name || '教师' }} - 初中班级积分管理系统</span>
         <el-button @click="handleLogout" type="danger" size="small">退出</el-button>
       </el-header>
       <el-main>
