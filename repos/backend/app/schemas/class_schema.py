@@ -20,6 +20,14 @@ class CourseBasic(BaseModel):
         from_attributes = True
 
 
+class ClassBasic(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
 class ClassCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
     code: str = Field(..., min_length=1, max_length=20)
