@@ -5,7 +5,7 @@ from typing import List
 
 from app.models.models import ClassModel, TeacherClass, ClassCourse, StudentClass, Teacher, Course
 from app.schemas.class_schema import ClassCreate, ClassUpdate, ClassResponse, TeacherBasic, CourseBasic
-from app.dependencies import get_db
+from app.dependencies import get_db, get_current_user
 
 router = APIRouter(prefix="/api/classes", tags=["classes"])
 
@@ -34,14 +34,14 @@ def build_class_response(class_model: ClassModel) -> ClassResponse:
 
 
 @router.get("", response_model=List[ClassResponse])
-def list_classes(db: Session = Depends(get_db)):
+def list_classes(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     """Get all classes with associated teachers and courses."""
     classes = db.query(ClassModel).all()
     return [build_class_response(c) for c in classes]
 
 
 @router.post("", response_model=ClassResponse, status_code=status.HTTP_201_CREATED)
-def create_class(class_data: ClassCreate, db: Session = Depends(get_db)):
+def create_class(class_data: ClassCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     """Create a new class with associated teachers and courses."""
     # Check if code already exists
     existing = db.query(ClassModel).filter(ClassModel.code == class_data.code).first()
@@ -82,7 +82,7 @@ def create_class(class_data: ClassCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/{class_id}", response_model=ClassResponse)
-def get_class(class_id: int, db: Session = Depends(get_db)):
+def get_class(class_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     """Get a class by ID."""
     class_model = db.query(ClassModel).filter(ClassModel.id == class_id).first()
     if not class_model:
@@ -94,7 +94,7 @@ def get_class(class_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{class_id}", response_model=ClassResponse)
-def update_class(class_id: int, class_data: ClassUpdate, db: Session = Depends(get_db)):
+def update_class(class_id: int, class_data: ClassUpdate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     """Update a class."""
     class_model = db.query(ClassModel).filter(ClassModel.id == class_id).first()
     if not class_model:
@@ -149,7 +149,7 @@ def update_class(class_id: int, class_data: ClassUpdate, db: Session = Depends(g
 
 
 @router.delete("/{class_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_class(class_id: int, db: Session = Depends(get_db)):
+def delete_class(class_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     """Delete a class (logical delete - just mark as inactive)."""
     class_model = db.query(ClassModel).filter(ClassModel.id == class_id).first()
     if not class_model:
@@ -166,7 +166,7 @@ def delete_class(class_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{class_id}/activate", response_model=ClassResponse)
-def activate_class(class_id: int, db: Session = Depends(get_db)):
+def activate_class(class_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     """Activate a class and all its students."""
     class_model = db.query(ClassModel).filter(ClassModel.id == class_id).first()
     if not class_model:

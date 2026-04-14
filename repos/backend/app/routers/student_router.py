@@ -13,6 +13,8 @@ from app.utils.excel import read_student_import
 
 router = APIRouter(prefix="/api/students", tags=["students"])
 
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
 
 @router.get("", response_model=list[StudentResponse])
 def list_students(
@@ -138,6 +140,11 @@ async def import_students(
 
     # Read Excel file
     file_content = await file.read()
+    if len(file_content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="文件大小超过5MB限制"
+        )
     try:
         students_data = read_student_import(file_content)
     except ValueError as e:

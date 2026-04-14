@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from openpyxl import load_workbook
 
 from app.models.models import Config, TermSetting, ScoreRecord, StudentClass, Student, ClassModel, Course, Teacher
-from app.dependencies import get_db
+from app.dependencies import get_db, get_current_user
 from app.utils.settlement import generate_settlement_excel
 
 router = APIRouter(prefix="/api", tags=["settlement"])
@@ -28,7 +28,8 @@ def verify_code(db: Session, code: str, config_key: str) -> None:
 def settlement(
     class_id: int = Query(..., description="班级ID"),
     code: str = Query(..., description="结算确认码"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
     """
     结算接口：生成结算Excel并清零积分。
@@ -108,16 +109,23 @@ def settlement(
     # 生成Excel
     excel_bytes = generate_settlement_excel(class_name, ranking_data, detail_data)
 
-    # 4. 逻辑删除该班级所有score_record
-    db.query(ScoreRecord).filter(
-        ScoreRecord.student_id.in_([sc.student_id for sc in student_classes])
-    ).delete(synchronize_session=False)
+    # 4. 逻辑删除该班级所有score_record (使用事务保证原子性)
+    try:
+        db.query(ScoreRecord).filter(
+            ScoreRecord.student_id.in_([sc.student_id for sc in student_classes])
+        ).delete(synchronize_session=False)
 
-    # 5. 重置student_class.current_score为0
-    for sc in student_classes:
-        sc.current_score = 0
+        # 5. 重置student_class.current_score为0
+        for sc in student_classes:
+            sc.current_score = 0
 
-    db.commit()
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="结算失败，数据已回滚"
+        )
 
     # 6. 返回Excel文件流
     return StreamingResponse(
@@ -129,12 +137,15 @@ def settlement(
     )
 
 
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
 @router.post("/initialization")
 def initialization(
     class_id: int = Query(..., description="班级ID"),
     code: str = Query(..., description="初始化确认码"),
     file: UploadFile = File(..., description="Excel文件"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
     """
     初始化接口：从Excel读取数据重置学生积分。
@@ -154,9 +165,14 @@ def initialization(
             detail="请上传Excel文件"
         )
 
-    # 2. 读取Excel
+    # 2. 读取Excel并验证文件大小
     try:
         contents = file.file.read()
+        if len(contents) > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="文件大小超过5MB限制"
+            )
         wb = load_workbook(BytesIO(contents))
         ws = wb.active
 
