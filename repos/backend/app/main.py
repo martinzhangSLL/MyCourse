@@ -18,9 +18,9 @@ async def lifespan(app: FastAPI):
         from app.models.models import Config
 
         default_configs = [
-            {"key": "settlement_code", "value": "123456"},
-            {"key": "init_code", "value": "888888"},
-            {"key": "reasons", "value": "课堂表现,作业完成,考试进步,帮助他人,值日工作"},
+            {"key": "settlement_code", "value": "ADMIN123"},
+            {"key": "init_code", "value": "INIT456"},
+            {"key": "reasons", "value": "考试,作业,荣誉,其他"},
         ]
 
         for config_data in default_configs:
