@@ -24,7 +24,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'classes',
         name: 'AdminClasses',
-        component: () => import('@/views/admin/Dashboard.vue'),
+        component: () => import('@/views/admin/ClassManage.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
@@ -36,7 +36,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'teachers',
         name: 'AdminTeachers',
-        component: () => import('@/views/admin/Dashboard.vue'),
+        component: () => import('@/views/admin/TeacherManage.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
