@@ -22,6 +22,8 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         from app.models.models import Config
+        from app.utils.security import hash_password
+        import os
 
         default_configs = [
             {"key": "settlement_code", "value": get_default_settlement_code()},
@@ -33,6 +35,13 @@ async def lifespan(app: FastAPI):
             existing = db.query(Config).filter(Config.key == config_data["key"]).first()
             if not existing:
                 db.add(Config(**config_data))
+
+        # Initialize admin password if not exists
+        admin_password_config = db.query(Config).filter(Config.key == "admin_password_hash").first()
+        if not admin_password_config:
+            default_password = os.environ.get("ADMIN_PASSWORD", "admin123")
+            hashed = hash_password(default_password)
+            db.add(Config(key="admin_password_hash", value=hashed))
 
         db.commit()
     except Exception as e:
@@ -50,8 +59,9 @@ app = FastAPI(title="Score Management API", lifespan=lifespan)
 
 
 # Include routers when they are created
-# app.include_router(teacher.router, prefix="/api/teachers", tags=["teachers"])
-# app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+from app.routers import auth_router
+
+app.include_router(auth_router)
 # app.include_router(score.router, prefix="/api/scores", tags=["scores"])
 # app.include_router(class_.router, prefix="/api/classes", tags=["classes"])
 # app.include_router(student.router, prefix="/api/students", tags=["students"])
