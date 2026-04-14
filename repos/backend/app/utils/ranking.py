@@ -1,4 +1,6 @@
 from datetime import date, timedelta
+from fastapi import HTTPException
+import re
 from typing import Optional
 from sqlalchemy.orm import Session
 
@@ -124,6 +126,8 @@ def calculate_rankings(
         end_date = week_end
     elif period == "month":
         if month:
+            if not re.match(r"^\d{4}-\d{2}$", month):
+                raise ValueError("month must be in YYYY-MM format")
             year, month_num = map(int, month.split("-"))
             start_date, end_date = get_date_range_for_month(year, month_num)
         else:
@@ -211,8 +215,8 @@ def generate_ranking_excel(
             try:
                 if cell.value:
                     max_length = max(max_length, len(str(cell.value)))
-            except:
-                pass
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Excel generation failed: {str(e)}")
         ws.column_dimensions[col_letter].width = max_length + 2
 
     excel_bytes = BytesIO()

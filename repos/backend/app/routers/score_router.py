@@ -202,6 +202,22 @@ def list_scores(
     - start: Filter records from this datetime
     - end: Filter records until this datetime
     """
+    # Authorization: teachers can only view scores for classes they manage
+    if current_user["role"] == "teacher":
+        teacher_id = current_user["id"]
+        teacher_classes = (
+            db.query(TeacherClass)
+            .filter(TeacherClass.teacher_id == teacher_id)
+            .all()
+        )
+        teacher_class_ids = [tc.class_id for tc in teacher_classes]
+
+        if class_id is not None and class_id not in teacher_class_ids:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not assigned to this class"
+            )
+
     query = db.query(ScoreRecord)
 
     # Filter by class_id (via StudentClass)
