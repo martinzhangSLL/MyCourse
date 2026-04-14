@@ -59,15 +59,17 @@ app = FastAPI(title="Score Management API", lifespan=lifespan)
 
 
 # Include routers when they are created
-from app.routers import auth_router
+from app.routers import auth_router, course_router, class_course_router, class_router, config_router, term_router, teacher_router, settlement_router, student_router
 
 app.include_router(auth_router)
-# app.include_router(score.router, prefix="/api/scores", tags=["scores"])
-# app.include_router(class_.router, prefix="/api/classes", tags=["classes"])
-# app.include_router(student.router, prefix="/api/students", tags=["students"])
-# app.include_router(course.router, prefix="/api/courses", tags=["courses"])
-# app.include_router(term.router, prefix="/api/terms", tags=["terms"])
-# app.include_router(config.router, prefix="/api/config", tags=["config"])
+app.include_router(course_router)
+app.include_router(class_course_router)
+app.include_router(class_router)
+app.include_router(config_router)
+app.include_router(term_router)
+app.include_router(teacher_router)
+app.include_router(settlement_router)
+app.include_router(student_router)
 
 
 @app.get("/")
