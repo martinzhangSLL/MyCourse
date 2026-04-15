@@ -30,7 +30,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'students',
         name: 'AdminStudents',
-        component: () => import('@/views/admin/Dashboard.vue'),
+        component: () => import('@/views/admin/StudentManage.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
       {

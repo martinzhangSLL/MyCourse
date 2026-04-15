@@ -19,17 +19,18 @@
           </el-select>
         </div>
 
-        <div class="filter-actions" v-if="selectedClassId">
-          <el-tag v-if="selectedClass?.is_activated" type="success" size="large">
+        <div class="filter-actions">
+          <el-tag v-if="selectedClass?.is_active" type="success" size="large">
             已激活
           </el-tag>
-          <el-button
-            v-else
-            type="primary"
-            @click="showImportDialog"
-          >
-            导入学生
-          </el-button>
+          <template v-else>
+            <el-button type="primary" @click="showAddDialog">
+              添加学生
+            </el-button>
+            <el-button type="success" @click="showImportDialog">
+              导入学生
+            </el-button>
+          </template>
         </div>
       </div>
     </div>
@@ -108,6 +109,12 @@
       width="500px"
     >
       <div class="import-content">
+        <div class="template-download">
+          <el-button type="success" @click="downloadTemplate">
+            <el-icon><Download /></el-icon>
+            下载导入模板
+          </el-button>
+        </div>
         <el-upload
           ref="uploadRef"
           class="upload-demo"
@@ -143,14 +150,14 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { UploadFilled } from '@element-plus/icons-vue'
+import { UploadFilled, Download } from '@element-plus/icons-vue'
 import api from '@/api'
 import { useAuthStore } from '@/stores/auth'
 
 interface ClassItem {
   id: number
   name: string
-  is_activated: boolean
+  is_active: boolean
 }
 
 interface StudentItem {
@@ -322,6 +329,24 @@ async function handleImport() {
   uploadRef.value.submit()
 }
 
+async function downloadTemplate() {
+  try {
+    const response = await api.get('/students/template', {
+      responseType: 'blob',
+    })
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'student_import_template.xlsx')
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (err) {
+    ElMessage.error('下载模板失败')
+  }
+}
+
 function handleImportSuccess(response: any) {
   ElMessage.success('导入成功')
   importDialogVisible.value = false
@@ -390,6 +415,10 @@ function handlePageChange(page: number) {
 
 .import-content {
   padding: 20px 0;
+}
+
+.template-download {
+  margin-bottom: 20px;
 }
 
 .upload-demo {
