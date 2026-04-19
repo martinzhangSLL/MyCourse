@@ -17,10 +17,19 @@
             <el-table-column prop="school_year" label="学年" width="150" align="center" />
             <el-table-column prop="start_date" label="开始日期" width="150" align="center" />
             <el-table-column prop="end_date" label="结束日期" width="150" align="center" />
-            <el-table-column label="操作" width="200" align="center">
+            <el-table-column prop="is_active" label="状态" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag v-if="row.is_active" type="success" size="small">当前学期</el-tag>
+                <span v-else style="color: #999">-</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="250" align="center">
               <template #default="{ row }">
                 <el-button type="primary" link @click="openTermDialog(row)">
                   编辑
+                </el-button>
+                <el-button v-if="!row.is_active" type="success" link @click="activateTerm(row.id)">
+                  激活
                 </el-button>
                 <el-button type="danger" link @click="deleteTerm(row.id)">
                   删除
@@ -152,6 +161,7 @@ interface Term {
   school_year: string
   start_date: string
   end_date: string
+  is_active: boolean
 }
 
 const terms = ref<Term[]>([])
@@ -244,6 +254,23 @@ async function deleteTerm(id: number) {
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error.response?.data?.detail || '删除失败')
+    }
+  }
+}
+
+async function activateTerm(id: number) {
+  try {
+    await ElMessageBox.confirm('确定要激活该学期吗？', '激活确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'info'
+    })
+    await api.put(`/config/terms/${id}/activate`)
+    ElMessage.success('激活成功')
+    await fetchTerms()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.response?.data?.detail || '激活失败')
     }
   }
 }
