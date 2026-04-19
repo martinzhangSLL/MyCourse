@@ -71,7 +71,8 @@ def get_terms(db: Session = Depends(get_db)):
             name=term.name,
             year=term.year,
             start_date=setting.start_date if setting else date.today(),
-            end_date=setting.end_date if setting else date.today()
+            end_date=setting.end_date if setting else date.today(),
+            is_active=term.is_active
         ))
 
     return result
@@ -240,9 +241,10 @@ def delete_term(
     1. 验证当前用户是管理员
     2. 查询学期记录
     3. 如果不存在，抛出 404
-    4. 删除 TermSetting
-    5. 删除 Term
-    6. 提交事务
+    4. 如果是有效学期，抛出 403
+    5. 删除 TermSetting
+    6. 删除 Term
+    7. 提交事务
 
     参数：
         term_id: 学期 ID
@@ -253,7 +255,7 @@ def delete_term(
         None（HTTP 204）
 
     异常：
-        HTTPException 403: 非管理员用户
+        HTTPException 403: 非管理员用户或正在激活的学期
         HTTPException 404: 学期不存在
     """
     # Step 1: 验证管理员权限
@@ -271,13 +273,147 @@ def delete_term(
             detail="Term not found"
         )
 
-    # Step 3: 删除 TermSetting（时间设置）
+    # Step 3: 检查是否是有效学期
+    if term.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="请先激活其他学期"
+        )
+
+    # Step 4: 删除 TermSetting（时间设置）
     db.query(TermSetting).filter(
         TermSetting.term_id == term_id
     ).delete()
 
-    # Step 4: 删除 Term
+    # Step 5: 删除 Term
     db.delete(term)
 
-    # Step 5: 提交事务
+    # Step 6: 提交事务
     db.commit()
+
+
+# ========== 获取当前有效学期 ==========
+
+@router.get("/current", response_model=TermResponse)
+def get_current_term(db: Session = Depends(get_db)):
+    """
+    获取当前激活的学期
+
+    执行流程：
+    1. 查询 is_active=True 的学期
+    2. 如果不存在，抛出 404
+    3. 查询学期的时间设置
+    4. 返回学期信息
+
+    参数：
+        db: 数据库会话
+
+    返回：
+        TermResponse: 当前激活的学期信息
+
+    异常：
+        HTTPException 404: 没有激活的学期
+    """
+    # Step 1: 查询激活的学期
+    term = db.query(Term).filter(Term.is_active == True).first()
+
+    if not term:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active term found"
+        )
+
+    # Step 2: 查询学期的时间设置
+    setting = db.query(TermSetting).filter(
+        TermSetting.term_id == term.id
+    ).first()
+
+    # Step 3: 返回学期信息
+    return TermResponse(
+        id=term.id,
+        name=term.name,
+        year=term.year,
+        start_date=setting.start_date if setting else date.today(),
+        end_date=setting.end_date if setting else date.today(),
+        is_active=term.is_active
+    )
+
+
+# ========== 激活学期 ==========
+
+@router.put("/{term_id}/activate", response_model=TermResponse)
+def activate_term(
+    term_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    激活指定学期（仅管理员可操作）
+
+    执行流程：
+    1. 验证当前用户是管理员
+    2. 查询学期记录
+    3. 如果不存在，抛出 404
+    4. 校验学期日期已配置（start_date 和 end_date 都存在）
+    5. 将其他学期置为 is_active=False
+    6. 将当前学期 is_active=True
+    7. 提交事务
+
+    参数：
+        term_id: 学期 ID
+        db: 数据库会话
+        current_user: 当前登录用户
+
+    返回：
+        TermResponse: 激活后的学期信息
+
+    异常：
+        HTTPException 403: 非管理员用户
+        HTTPException 404: 学期不存在
+        HTTPException 400: 学期日期未配置
+    """
+    # Step 1: 验证管理员权限
+    if current_user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+
+    # Step 2: 查询学期
+    term = db.query(Term).filter(Term.id == term_id).first()
+    if not term:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Term not found"
+        )
+
+    # Step 3: 校验学期日期已配置
+    setting = db.query(TermSetting).filter(
+        TermSetting.term_id == term_id
+    ).first()
+
+    if not setting or not setting.start_date or not setting.end_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Term dates not configured"
+        )
+
+    # Step 4: 将其他学期置为非激活
+    db.query(Term).filter(Term.is_active == True).update({"is_active": False})
+
+    # Step 5: 激活当前学期
+    term.is_active = True
+
+    # Step 6: 提交事务
+    db.commit()
+    db.refresh(term)
+
+    # Step 7: 返回激活后的学期信息
+    return TermResponse(
+        id=term.id,
+        name=term.name,
+        year=term.year,
+        start_date=setting.start_date,
+        end_date=setting.end_date,
+        is_active=term.is_active
+    )

@@ -44,6 +44,7 @@ from app.models.models import (
 )
 # 导入 Pydantic Schema
 from app.schemas.score_schema import ScoreCreate, ScoreResponse, ScoreDetailResponse
+from app.models.models import Term
 from app.schemas.class_schema import ClassBasic
 
 
@@ -232,7 +233,15 @@ def create_score(
             detail="Only teachers can create score records"
         )
 
-    # Step 2: 验证学生存在
+    # Step 2: 获取当前激活的学期
+    active_term = db.query(Term).filter(Term.is_active == True).first()
+    if not active_term:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="请先激活一个学期"
+        )
+
+    # Step 3: 验证学生存在
     # 注意：这里检查的是 StudentClass，而不是 Student
     # 因为积分是学生在特定班级的积分
     student_class = (
@@ -247,7 +256,7 @@ def create_score(
             detail="Student not found"
         )
 
-    # Step 3: 验证课程存在
+    # Step 4: 验证课程存在
     course = db.query(Course).filter(
         Course.id == score_data.course_id
     ).first()
@@ -258,10 +267,10 @@ def create_score(
             detail="Course not found"
         )
 
-    # Step 4: 获取教师 ID（从当前用户信息）
+    # Step 5: 获取教师 ID（从当前用户信息）
     teacher_id = current_user["id"]
 
-    # Step 5: 创建积分记录
+    # Step 6: 创建积分记录
     score_record = ScoreRecord(
         student_id=score_data.student_id,
         value=score_data.value,           # 正数=加分，负数=扣分
@@ -269,18 +278,19 @@ def create_score(
         course_id=score_data.course_id,   # 关联课程
         teacher_id=teacher_id,            # 记录操作教师
         score_at=score_data.score_at,      # 积分发生时间
+        term_id=active_term.id,           # 关联当前激活的学期
     )
     db.add(score_record)
 
-    # Step 6: 更新学生的当前积分
+    # Step 7: 更新学生的当前积分
     # 直接在内存中修改，由 commit() 写入数据库
     student_class.current_score += score_data.value
 
-    # Step 7: 提交事务
+    # Step 8: 提交事务
     db.commit()
     db.refresh(score_record)
 
-    # Step 8: 返回创建的记录
+    # Step 9: 返回创建的记录
     return ScoreRecord(
         id=score_record.id,
         student_id=score_record.student_id,
@@ -439,6 +449,11 @@ def list_scores(
             Teacher.id == record.teacher_id
         ).first()
 
+        # 查询学期信息
+        term = db.query(Term).filter(
+            Term.id == record.term_id
+        ).first() if record.term_id else None
+
         # 构建详细响应对象
         result.append(ScoreDetailResponse(
             id=record.id,
@@ -450,6 +465,8 @@ def list_scores(
             course_name=course.name if course else "",
             teacher_name=teacher.name if teacher else "",
             score_at=record.score_at,
+            term_id=record.term_id,
+            term_name=term.name if term else None,
         ))
 
     return result
