@@ -28,6 +28,7 @@ class TermResponse(BaseModel):
     year: str
     start_date: date
     end_date: date
+    is_active: bool = False
 
     class Config:
         from_attributes = True

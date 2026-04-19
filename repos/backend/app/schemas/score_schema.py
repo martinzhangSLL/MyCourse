@@ -5,9 +5,10 @@ from pydantic import BaseModel, Field
 class ScoreCreate(BaseModel):
     """Schema for creating a new score record."""
     student_id: int = Field(..., gt=0)
-    value: int = Field(..., gt=0, description="Score value, positive for add, negative for subtract")
+    value: int = Field(..., description="Score value, positive for add, negative for subtract")
     reason: str = Field(..., min_length=1, max_length=200)
     course_id: int = Field(..., gt=0)
+    term_id: int | None = None
     score_at: datetime = Field(..., description="Time when the score was given")
 
 
@@ -18,6 +19,7 @@ class ScoreResponse(BaseModel):
     value: int
     reason: str
     course_id: int
+    term_id: int | None = None
     teacher_id: int
     score_at: datetime
     created_at: datetime
@@ -35,6 +37,8 @@ class ScoreDetailResponse(BaseModel):
     value: int
     reason: str
     course_name: str
+    term_id: int | None = None
+    term_name: str | None = None
     teacher_name: str
     score_at: datetime
 
