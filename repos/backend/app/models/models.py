@@ -272,6 +272,7 @@ class ScoreRecord(Base):
     reason = Column(String(200))  # 积分原因
     course_id = Column(Integer, ForeignKey("course.id"), nullable=False)
     teacher_id = Column(Integer, ForeignKey("teacher.id"), nullable=False)
+    term_id = Column(Integer, ForeignKey("term.id"), nullable=True)
     score_at = Column(DateTime, nullable=False)  # 积分发生的时间
     created_at = Column(DateTime, default=datetime.utcnow)  # 记录创建时间
 
@@ -279,6 +280,7 @@ class ScoreRecord(Base):
     student = relationship("Student", back_populates="score_records")
     course = relationship("Course", back_populates="score_records")
     teacher = relationship("Teacher", back_populates="score_records")
+    term = relationship("Term", back_populates="score_records")
 
 
 # ========== 学期模型 (Term) ==========
@@ -302,9 +304,11 @@ class Term(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
     year = Column(String(20), nullable=False)
+    is_active = Column(Boolean, default=False)
 
     # Relationships
     term_settings = relationship("TermSetting", back_populates="term")
+    score_records = relationship("ScoreRecord", back_populates="term")
 
 
 # ========== 学期设置模型 (TermSetting) ==========
