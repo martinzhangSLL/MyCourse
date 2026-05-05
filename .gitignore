@@ -49,3 +49,11 @@ logs/
 .DS_Store
 Thumbs.db
 .worktrees/
+
+#frontend
+.node_modules/
+node_modules/
+frontend/node_modules/*
+repos/frontend/node_modules/*
+repos/frontend/node_modules/
+

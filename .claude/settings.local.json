@@ -65,7 +65,13 @@
       "Bash(sshpass:*)",
       "Bash(timeout 10 bash -c 'echo \"\"quit\"\" | nc -zv 47.93.44.227 80')",
       "Bash(.venv/Scripts/python -m uvicorn app.main:app --env-file .env --host 127.0.0.1 --port 8001)",
-      "Bash(.venv/Scripts/python -m uvicorn app.main:app --env-file .env --host 127.0.0.1 --port 8000)"
+      "Bash(.venv/Scripts/python -m uvicorn app.main:app --env-file .env --host 127.0.0.1 --port 8000)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(JWT_SECRET_KEY=dev_secret_key_12345 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000)",
+      "Bash(.venv/Scripts/python -m py_compile app/main.py app/routers/config_router.py)",
+      "Bash(xargs -I {} taskkill //F //PID {})",
+      "Bash(./deploy.sh deploy:*)",
+      "Bash(where rsync:*)"
     ]
   }
 }

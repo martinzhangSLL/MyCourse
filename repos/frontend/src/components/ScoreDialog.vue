@@ -140,7 +140,7 @@ watch(visible, async (newVal) => {
 async function fetchReasons() {
   try {
     const response = await api.get('/config/reasons')
-    reasons.value = JSON.parse(response.data.value)
+    reasons.value = response.data.reasons
   } catch (err) {
     console.error('Failed to fetch reasons:', err)
   }
