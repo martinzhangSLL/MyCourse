@@ -284,12 +284,13 @@ def get_rankings_classes(
         List[ClassBasic]: 班级基本信息列表
     """
     from app.schemas.class_schema import ClassBasic
+    from app.models.models import TeacherClass
 
-    if current_user["role"] == "admin":
-        # admin: 查询所有班级
+    role = current_user.get("role")
+
+    if role == "admin":
         classes = db.query(ClassModel).all()
-    else:
-        # teacher: 只查询关联的班级
+    elif role == "teacher":
         teacher_id = current_user["id"]
         teacher_classes = db.query(TeacherClass).filter(
             TeacherClass.teacher_id == teacher_id
@@ -298,6 +299,9 @@ def get_rankings_classes(
         classes = db.query(ClassModel).filter(
             ClassModel.id.in_(class_ids)
         ).all()
+    else:
+        # 未知角色返回空列表，符合最小权限原则
+        return []
 
     return [
         ClassBasic(id=c.id, name=c.name, code=c.code)
