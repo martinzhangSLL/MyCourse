@@ -133,7 +133,7 @@ const exporting = ref(false)
 
 async function fetchClasses() {
   try {
-    const response = await api.get('/classes')
+    const response = await api.get('/rankings/classes')
     classes.value = response.data
     if (classes.value.length > 0) {
       selectedClassId.value = classes.value[0].id
