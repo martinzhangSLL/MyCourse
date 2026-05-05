@@ -26,7 +26,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 # 导入数据模型
-from app.models.models import ClassModel, TermSetting
+from app.models.models import ClassModel, TermSetting, TeacherClass
 # 导入排名计算工具
 from app.utils.ranking import calculate_rankings, generate_ranking_excel
 # 导入依赖注入函数
@@ -265,3 +265,41 @@ def get_week_number(start_date: date, target_date: date) -> int:
     """
     delta = (target_date - start_date).days
     return delta // 7 + 1
+
+
+# ========== 获取可访问的班级列表 ==========
+
+@router.get("/classes")
+def get_rankings_classes(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    获取当前用户可访问的班级列表
+
+    - admin: 返回所有班级
+    - teacher: 返回仅关联的班级
+
+    返回：
+        List[ClassBasic]: 班级基本信息列表
+    """
+    from app.schemas.class_schema import ClassBasic
+
+    if current_user["role"] == "admin":
+        # admin: 查询所有班级
+        classes = db.query(ClassModel).all()
+    else:
+        # teacher: 只查询关联的班级
+        teacher_id = current_user["id"]
+        teacher_classes = db.query(TeacherClass).filter(
+            TeacherClass.teacher_id == teacher_id
+        ).all()
+        class_ids = [tc.class_id for tc in teacher_classes]
+        classes = db.query(ClassModel).filter(
+            ClassModel.id.in_(class_ids)
+        ).all()
+
+    return [
+        ClassBasic(id=c.id, name=c.name, code=c.code)
+        for c in classes
+    ]

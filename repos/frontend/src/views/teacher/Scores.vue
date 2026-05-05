@@ -28,6 +28,10 @@
             style="width: 200px"
           >
             <el-option
+              label="--所有--"
+              :value="null"
+            />
+            <el-option
               v-for="course in courses"
               :key="course.id"
               :label="course.name"
@@ -48,23 +52,25 @@
       />
     </div>
 
-    <el-empty v-else-if="selectedClassId && selectedCourseId" description="该班级暂无学生">
+    <el-empty v-else-if="selectedClassId" description="该班级暂无学生">
     </el-empty>
 
-    <el-empty v-else description="请先选择班级和课程">
+    <el-empty v-else description="请先选择班级">
     </el-empty>
 
     <ScoreDialog
       v-model="dialogVisible"
       :student-id="selectedStudentId || 0"
       :course-id="selectedCourseId || 0"
+      :course-name="selectedCourseName"
+      :courses="selectedCourseId === null ? courses : []"
       @success="onScoreSuccess"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
 import ScoreCard from '@/components/ScoreCard.vue'
@@ -92,10 +98,17 @@ const courses = ref<CourseItem[]>([])
 const students = ref<Student[]>([])
 
 const selectedClassId = ref<number | undefined>()
-const selectedCourseId = ref<number | undefined>()
+const selectedCourseId = ref<number | null>(null)
 const selectedStudentId = ref<number | undefined>()
 
 const dialogVisible = ref(false)
+
+// 当前选中课程的名称（用于在"所有"模式下显示在popup中）
+const selectedCourseName = computed(() => {
+  if (selectedCourseId.value === null) return ''
+  const course = courses.value.find(c => c.id === selectedCourseId.value)
+  return course?.name || ''
+})
 
 onMounted(async () => {
   await fetchTeacherClasses()
@@ -105,13 +118,19 @@ async function fetchTeacherClasses() {
   try {
     const response = await api.get('/teacher/classes')
     classes.value = response.data
+
+    // 默认选中第一个班级
+    if (classes.value.length > 0) {
+      selectedClassId.value = classes.value[0].id
+      await fetchClassCourses()
+    }
   } catch (err) {
     console.error('Failed to fetch classes:', err)
   }
 }
 
 async function onClassChange() {
-  selectedCourseId.value = undefined
+  selectedCourseId.value = null // 重置为"所有"
   students.value = []
 
   if (selectedClassId.value) {
@@ -127,6 +146,11 @@ async function fetchClassCourses() {
       params: { class_id: selectedClassId.value }
     })
     courses.value = response.data
+
+    // 默认选中"所有"选项
+    selectedCourseId.value = null
+    // 自动加载学生列表
+    await fetchStudents()
   } catch (err) {
     console.error('Failed to fetch courses:', err)
   }

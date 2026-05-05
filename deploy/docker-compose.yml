@@ -1,0 +1,82 @@
+services:
+  # Frontend service
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: mycourse-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - mycourse-network
+    restart: unless-stopped
+
+  # Backend API service 1
+  backend1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: mycourse-backend1
+    environment:
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      - DATABASE_URL=sqlite:////var/www/mycourse/db/mycourse.db
+    volumes:
+      - /var/www/mycourse/db:/var/www/mycourse/db
+    working_dir: /app/repos/backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001
+    expose:
+      - "8001"
+    networks:
+      - mycourse-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Backend API service 2
+  backend2:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: mycourse-backend2
+    environment:
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      - DATABASE_URL=sqlite:////var/www/mycourse/db/mycourse.db
+    volumes:
+      - /var/www/mycourse/db:/var/www/mycourse/db
+    working_dir: /app/repos/backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001
+    expose:
+      - "8001"
+    networks:
+      - mycourse-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx load balancer and reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: mycourse-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend1
+      - backend2
+    networks:
+      - mycourse-network
+    restart: unless-stopped
+
+networks:
+  mycourse-network:
+    driver: bridge

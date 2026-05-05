@@ -23,8 +23,9 @@ from fastapi import HTTPException
 import re
 from typing import Optional
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
-from app.models.models import StudentClass, Student, ScoreRecord, TermSetting
+from app.models.models import StudentClass, Student, ScoreRecord, TermSetting, Term
 
 
 # ========== 周数计算函数 ==========
@@ -62,10 +63,10 @@ def get_date_range_for_week(start_date: date, week: int) -> tuple[date, date]:
     # 计算该周的开始日期
     # 第 1 周的开始日期就是 start_date
     # 第 2 周的开始日期是 start_date + 7 天
-    week_start = start_date + ((week - 1) * 7)
+    week_start = start_date + timedelta(days=(week - 1) * 7)
 
     # 该周结束日期 = 开始日期 + 6 天（一周 7 天）
-    week_end = week_start + 6
+    week_end = week_start + timedelta(days=6)
 
     return week_start, week_end
 
@@ -125,13 +126,13 @@ def calculate_score_change(
         ScoreRecord.student_id == student_id
     )
 
-    # 添加开始日期筛选
+    # 添加开始日期筛选（使用 func.date 提取日期部分进行比较）
     if start_date:
-        query = query.filter(ScoreRecord.score_at >= start_date)
+        query = query.filter(func.date(ScoreRecord.score_at) >= start_date)
 
-    # 添加结束日期筛选
+    # 添加结束日期筛选（使用 func.date 提取日期部分进行比较）
     if end_date:
-        query = query.filter(ScoreRecord.score_at <= end_date)
+        query = query.filter(func.date(ScoreRecord.score_at) <= end_date)
 
     # 执行查询，获取所有记录
     records = query.all()
@@ -183,8 +184,12 @@ def calculate_rankings(
         - change: 本周期积分变化
     """
     # Step 1: 获取学期设置
-    term_setting = db.query(TermSetting).order_by(
-        TermSetting.id.desc()
+    term = db.query(Term).filter(Term.is_active == True).first()
+    if not term:
+        return []
+
+    term_setting = db.query(TermSetting).filter(
+        TermSetting.term_id == term.id
     ).first()
 
     if not term_setting:
@@ -249,13 +254,25 @@ def calculate_rankings(
         )
 
         # 添加到排名数据
-        ranking_data.append({
-            "student_id": student.id,
-            "student_name": student.name,
-            "student_no": student.student_no,
-            "score": sc.current_score,  # 当前总积分
-            "change": change            # 本周期变化
-        })
+        if period == "week" or period == "month":
+            ranking_data.append({
+                "student_id": student.id,
+                "student_name": student.name,
+                "student_no": student.student_no,
+                "score": change,  # 当前总积分
+                "change": change            # 本周期变化
+            })
+        else:
+            ranking_data.append({
+                "student_id": student.id,
+                "student_name": student.name,
+                "student_no": student.student_no,
+                "score": sc.current_score,  # 当前总积分
+                "change": change            # 本周期变化
+            })
+        
+        
+        
 
     # Step 5: 排序
     # 按 current_score 降序，再按 change 降序

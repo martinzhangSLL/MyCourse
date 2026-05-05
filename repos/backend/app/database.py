@@ -37,12 +37,14 @@ REPOS_DIR = os.path.dirname(os.path.dirname(APP_DIR))
 # db/ 文件夹应该在 repos/ 目录下
 # 最终路径：D:\Learning\MyCourse\repos\db\scores.db
 DATABASE_PATH = os.path.join(REPOS_DIR, "db", "scores.db")
+os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
 
 # 将文件路径转换为 SQLite URL 格式
 # sqlite:/// 是 SQLAlchemy 识别 SQLite 的协议前缀
 # 三个斜杠表示相对路径（相对于当前工作目录）
 # 四个斜杠（file:///）表示绝对路径
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
+# 支持环境变量覆盖
+DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{DATABASE_PATH}")
 
 
 # ========== 创建数据库引擎 ==========
