@@ -130,6 +130,11 @@ async function fetchClasses() {
   try {
     const response = await api.get('/teacher/classes')
     classList.value = response.data
+    // 默认选择第一个班级
+    if (classList.value.length > 0) {
+      filterForm.class_id = classList.value[0].id
+      fetchScoreDetails()
+    }
   } catch (error: any) {
     ElMessage.error('获取班级列表失败')
   }
@@ -198,7 +203,6 @@ function formatDate(dateStr: string): string {
 
 onMounted(() => {
   fetchClasses()
-  fetchScoreDetails()
 })
 </script>
 

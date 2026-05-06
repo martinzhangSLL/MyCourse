@@ -393,6 +393,10 @@ def list_scores(
         )
         teacher_class_ids = [tc.class_id for tc in teacher_classes]
 
+        # 如果没有关联任何班级，返回空结果
+        if not teacher_class_ids:
+            return []
+
         # 如果请求了特定班级但该教师未关联，抛出错误
         if class_id is not None and class_id not in teacher_class_ids:
             raise HTTPException(
@@ -409,6 +413,12 @@ def list_scores(
             StudentClass,
             ScoreRecord.student_id == StudentClass.student_id
         ).filter(StudentClass.class_id == class_id)
+    elif current_user["role"] == "teacher":
+        # 教师未指定班级时，只返回所关联班级的记录
+        query = query.join(
+            StudentClass,
+            ScoreRecord.student_id == StudentClass.student_id
+        ).filter(StudentClass.class_id.in_(teacher_class_ids))
 
     # Step 4: 添加学生筛选
     if student_id is not None:
