@@ -148,7 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, FormInstance, FormRules } from 'element-plus'
 import api from '@/api'
 
@@ -287,6 +287,14 @@ function resetTermForm() {
 const reasons = ref<string[]>([])
 const reasonsLoading = ref(false)
 const newReason = ref('')
+
+watch(activeTab, (newTab) => {
+  if (newTab === 'reasons') {
+    fetchReasons()
+  } else if (newTab === 'codes') {
+    fetchCodes()
+  }
+})
 
 async function fetchReasons() {
   reasonsLoading.value = true

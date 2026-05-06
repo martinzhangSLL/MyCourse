@@ -140,9 +140,11 @@ watch(visible, async (newVal) => {
 async function fetchReasons() {
   try {
     const response = await api.get('/config/reasons')
-    reasons.value = response.data.reasons
+    reasons.value = response.data?.reasons ?? ['考试', '作业', '荣誉', '其他']
   } catch (err) {
     console.error('Failed to fetch reasons:', err)
+    // Fallback to defaults on error
+    reasons.value = ['考试', '作业', '荣誉', '其他']
   }
 }
 
