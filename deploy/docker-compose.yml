@@ -22,6 +22,7 @@ services:
       - DATABASE_URL=sqlite:////var/www/mycourse/db/mycourse.db
     volumes:
       - /var/www/mycourse/db:/var/www/mycourse/db
+      - pics-data:/app/pics/
     working_dir: /app/repos/backend
     command: uvicorn app.main:app --host 0.0.0.0 --port 8001
     expose:
@@ -47,6 +48,7 @@ services:
       - DATABASE_URL=sqlite:////var/www/mycourse/db/mycourse.db
     volumes:
       - /var/www/mycourse/db:/var/www/mycourse/db
+      - pics-data:/app/pics/
     working_dir: /app/repos/backend
     command: uvicorn app.main:app --host 0.0.0.0 --port 8001
     expose:
@@ -80,3 +82,6 @@ services:
 networks:
   mycourse-network:
     driver: bridge
+
+volumes:
+  pics-data:

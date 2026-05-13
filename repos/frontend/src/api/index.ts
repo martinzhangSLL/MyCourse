@@ -38,3 +38,14 @@ api.interceptors.response.use(
 )
 
 export default api
+
+// 段位管理 API
+export const rankApi = {
+  list: () => api.get('/ranks'),
+  get: (id: number) => api.get(`/ranks/${id}`),
+  create: (data: { name: string; min_score: number; max_score: number | null; image_url: string; display_order: number }) =>
+    api.post('/ranks', data),
+  update: (id: number, data: Partial<{ name: string; min_score: number; max_score: number | null; image_url: string; display_order: number }>) =>
+    api.put(`/ranks/${id}`, data),
+  delete: (id: number) => api.delete(`/ranks/${id}`),
+}

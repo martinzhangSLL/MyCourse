@@ -121,6 +121,34 @@ class TeacherClass(Base):
     class_model = relationship("ClassModel", back_populates="teacher_classes")
 
 
+# ========== 段位模型 (Rank) ==========
+
+class Rank(Base):
+    """
+    段位表模型
+
+    存储段位的基本信息，包括名称、积分范围和图片
+
+    字段说明：
+    - id: 主键，自增长
+    - name: 段位名称，如"青铜"、"白银"、"黄金"
+    - min_score: 最低积分，达到此积分才能获得该段位
+    - max_score: 最高积分，NULL 表示无上限
+    - image_url: 段位图片路径
+    - display_order: 排序序号，数字越小排序越靠前
+    - created_at: 创建时间
+    """
+    __tablename__ = "ranks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), nullable=False, comment="段位名称")
+    min_score = Column(Integer, nullable=False, comment="最低积分")
+    max_score = Column(Integer, nullable=True, comment="最高积分，NULL表示无上限")
+    image_url = Column(String(255), nullable=False, comment="段位图片路径")
+    display_order = Column(Integer, nullable=False, default=0, comment="排序序号")
+    created_at = Column(DateTime, default=datetime.now)
+
+
 # ========== 课程模型 (Course) ==========
 
 class Course(Base):

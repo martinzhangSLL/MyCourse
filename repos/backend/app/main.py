@@ -149,6 +149,7 @@ from app.routers import (
     score_router,          # 积分记录路由（管理员）
     teacher_score_router,  # 积分记录路由（教师）
     ranking_router,        # 排名相关路由
+    rank_router,           # 段位管理路由
 )
 
 # 将各个路由注册到 FastAPI 应用
@@ -189,6 +190,9 @@ app.include_router(teacher_score_router)
 
 # 排名路由：/api/rankings
 app.include_router(ranking_router)
+
+# 段位路由：/api/ranks
+app.include_router(rank_router)
 
 
 # ========== 根路径路由 ==========

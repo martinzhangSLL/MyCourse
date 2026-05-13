@@ -190,7 +190,8 @@ function handlePageChange() {
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return ''
-  const date = new Date(dateStr)
+  // 加上 'Z' 表示这是 UTC 时间，toLocaleString 会自动转为本地时区
+  const date = new Date(dateStr + 'Z')
   return date.toLocaleString('zh-CN', {
     year: 'numeric',
     month: '2-digit',

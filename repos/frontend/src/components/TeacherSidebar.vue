@@ -16,6 +16,9 @@
     <el-menu-item index="/teacher/details">
       <span>分值明细</span>
     </el-menu-item>
+    <el-menu-item index="/teacher/class-scores">
+      <span>班级分值</span>
+    </el-menu-item>
   </el-menu>
 </template>
 

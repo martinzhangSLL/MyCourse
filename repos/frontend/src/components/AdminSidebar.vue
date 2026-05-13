@@ -25,6 +25,9 @@
       <el-menu-item index="/admin/config">
         <span>配置管理</span>
       </el-menu-item>
+      <el-menu-item index="/admin/ranks">
+        <span>段位管理</span>
+      </el-menu-item>
       <el-menu-item index="/admin/settlement">
         <span>结算/初始化</span>
       </el-menu-item>

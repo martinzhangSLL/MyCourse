@@ -52,6 +52,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
+        path: 'ranks',
+        name: 'AdminRanks',
+        component: () => import('@/views/admin/RankManage.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
         path: 'settlement',
         name: 'AdminSettlement',
         component: () => import('@/views/admin/Settlement.vue'),
@@ -91,6 +97,12 @@ const routes: RouteRecordRaw[] = [
         path: 'details',
         name: 'TeacherDetails',
         component: () => import('@/views/teacher/Details.vue'),
+        meta: { requiresAuth: true, role: 'teacher' }
+      },
+      {
+        path: 'class-scores',
+        name: 'ClassScores',
+        component: () => import('../views/teacher/ClassScores.vue'),
         meta: { requiresAuth: true, role: 'teacher' }
       },
       {
