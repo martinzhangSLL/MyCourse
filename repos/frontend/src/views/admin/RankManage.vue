@@ -69,7 +69,22 @@
           />
         </el-form-item>
         <el-form-item label="图片路径">
-          <el-input v-model="form.image_url" placeholder="/pics/1.png" />
+          <div class="upload-row">
+            <el-input v-model="form.image_url" placeholder="/pics/xxx.png" style="flex: 1" />
+            <el-upload
+              action="/api/upload"
+              :headers="{ Authorization: token }"
+              :show-file-list="false"
+              :on-success="handleUploadSuccess"
+              :on-error="handleUploadError"
+              accept="image/png,image/jpeg,image/gif"
+            >
+              <el-button type="primary" plain>上传图片</el-button>
+            </el-upload>
+          </div>
+          <div class="image-preview" v-if="form.image_url">
+            <img :src="form.image_url" alt="预览" />
+          </div>
         </el-form-item>
         <el-form-item label="排序序号">
           <el-input-number v-model="form.display_order" :min="1" />
@@ -115,6 +130,17 @@ const form = reactive({
 })
 
 const formRef = ref()
+
+const token = localStorage.getItem('token')
+
+function handleUploadSuccess(response) {
+  form.image_url = response.url
+  ElMessage.success('上传成功')
+}
+
+function handleUploadError() {
+  ElMessage.error('上传失败')
+}
 
 onMounted(async () => {
   await fetchRanks()
@@ -264,5 +290,22 @@ async function handleDelete(row: RankItem) {
   --el-tag-bg-color: #86efac;
   --el-tag-border-color: #86efac;
   --el-tag-text-color: #15803d;
+}
+
+.upload-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.image-preview {
+  margin-top: 10px;
+}
+
+.image-preview img {
+  max-width: 100px;
+  max-height: 100px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
 }
 </style>

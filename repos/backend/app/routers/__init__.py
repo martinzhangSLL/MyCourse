@@ -9,5 +9,6 @@ from app.routers.student_router import router as student_router
 from app.routers.score_router import router as score_router, teacher_score_router
 from app.routers.ranking_router import router as ranking_router
 from app.routers.rank_router import router as rank_router
+from app.routers.upload_router import router as upload_router
 
-__all__ = ["auth_router", "class_router", "config_router", "term_router", "teacher_router", "course_router", "class_course_router", "settlement_router", "student_router", "score_router", "teacher_score_router", "ranking_router", "rank_router"]
+__all__ = ["auth_router", "class_router", "config_router", "term_router", "teacher_router", "course_router", "class_course_router", "settlement_router", "student_router", "score_router", "teacher_score_router", "ranking_router", "rank_router", "upload_router"]

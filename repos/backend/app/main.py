@@ -150,6 +150,7 @@ from app.routers import (
     teacher_score_router,  # 积分记录路由（教师）
     ranking_router,        # 排名相关路由
     rank_router,           # 段位管理路由
+    upload_router,         # 图片上传路由
 )
 
 # 将各个路由注册到 FastAPI 应用
@@ -193,6 +194,9 @@ app.include_router(ranking_router)
 
 # 段位路由：/api/ranks
 app.include_router(rank_router)
+
+# 图片上传路由：/api/upload
+app.include_router(upload_router)
 
 
 # ========== 根路径路由 ==========
