@@ -9,7 +9,7 @@
 
 import os
 import uuid
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status, Request
 from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/api", tags=["upload"])
@@ -21,6 +21,7 @@ MAX_SIZE = 5 * 1024 * 1024  # 5MB
 
 @router.post("/upload")
 async def upload_file(
+    request: Request,
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user)
 ):
@@ -61,8 +62,9 @@ async def upload_file(
     with open(filepath, "wb") as f:
         f.write(content)
 
-    # 返回访问路径
+    # 返回访问路径（使用完整 URL 方便前端展示）
+    base_url = str(request.base_url).rstrip('/')
     return {
-        "url": f"/pics/{filename}",
+        "url": f"{base_url}/pics/{filename}",
         "filename": filename
     }

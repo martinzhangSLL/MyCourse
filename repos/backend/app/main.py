@@ -15,7 +15,9 @@
 
 from contextlib import asynccontextmanager
 import logging
+import os
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 # 从 database.py 导入数据库引擎和 Base 类
 # Base: SQLAlchemy ORM 的基类，用于定义所有数据模型
@@ -127,6 +129,13 @@ app = FastAPI(
     title="Score Management API",
     lifespan=lifespan
 )
+
+# ========== 挂载静态文件目录（图片访问）==========
+# 确保上传目录存在
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/app/pics")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+# 挂载 /pics 路径到上传目录
+app.mount("/pics", StaticFiles(directory=UPLOAD_DIR), name="pics")
 
 
 # ========== 注册路由 (Routers) ==========

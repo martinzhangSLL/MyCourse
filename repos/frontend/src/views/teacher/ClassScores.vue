@@ -10,6 +10,10 @@
       <el-select v-model="selectedClass" placeholder="请选择班级" @change="onClassChange">
         <el-option v-for="cls in classes" :key="cls.id" :label="cls.name" :value="cls.id" />
       </el-select>
+      <el-select v-model="selectedCourse" placeholder="请选择课程" :disabled="!selectedClass" @change="onCourseChange" style="width: 200px; margin-left: 12px">
+        <el-option label="所有课程" :value="null" />
+        <el-option v-for="course in courses" :key="course.id" :label="course.name" :value="course.id" />
+      </el-select>
     </div>
 
     <div class="score-grid" v-loading="loading">
@@ -18,13 +22,12 @@
         :key="student.id"
         class="score-card"
         :class="{ 'highest-rank': student.next_rank_name === null }"
+        @click="openScoreDialog(student)"
       >
         <div class="halo"></div>
-        <div v-if="student.next_rank_name === null" class="highest-badge">最高境界</div>
         <div class="rank-image">
           <img :src="student.rank_image" :alt="student.rank_name" />
         </div>
-        <div class="rank-tag" :class="getRankTagClass(student.rank_name)">{{ student.rank_name }}</div>
         <div class="student-name">{{ student.name }}</div>
         <div class="progress-section" v-if="student.next_rank_name">
           <div class="progress-bar">
@@ -44,13 +47,23 @@
     </div>
 
     <div class="footer-divider"></div>
+
+    <ScoreDialog
+      v-model="dialogVisible"
+      :student-id="selectedStudent?.id || 0"
+      :course-id="selectedCourse || 0"
+      :course-name="selectedCourseName"
+      :courses="selectedCourse === null ? courses : []"
+      @success="onScoreSuccess"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
+import ScoreDialog from '@/components/ScoreDialog.vue'
 
 interface Rank {
   id: number
@@ -73,17 +86,33 @@ interface Student {
   score_to_next: number | null
 }
 
+interface Course {
+  id: number
+  name: string
+}
+
 const classes = ref<any[]>([])
+const courses = ref<Course[]>([])
 const ranks = ref<Rank[]>([])
 const students = ref<Student[]>([])
 const loading = ref(false)
 const selectedClass = ref<number | null>(null)
+const selectedCourse = ref<number | null>(null)
+const dialogVisible = ref(false)
+const selectedStudent = ref<Student | null>(null)
+
+const selectedCourseName = computed(() => {
+  if (selectedCourse.value === null) return ''
+  const course = courses.value.find(c => c.id === selectedCourse.value)
+  return course?.name || ''
+})
 
 async function fetchClasses() {
   const response = await api.get('/teacher/classes')
   classes.value = response.data
   if (classes.value.length > 0) {
     selectedClass.value = classes.value[0].id
+    await fetchCourses()
     await fetchStudents()
   }
 }
@@ -93,6 +122,14 @@ async function fetchRanks() {
   ranks.value = response.data
 }
 
+async function fetchCourses() {
+  if (!selectedClass.value) return
+  const response = await api.get('/teacher/class-courses', {
+    params: { class_id: selectedClass.value }
+  })
+  courses.value = response.data
+}
+
 async function fetchStudents() {
   if (!selectedClass.value) return
   loading.value = true
@@ -100,7 +137,6 @@ async function fetchStudents() {
     const response = await api.get('/students', {
       params: { class_id: selectedClass.value }
     })
-    // 为每个学生计算段位信息
     students.value = response.data.map((s: any) => calculateRank(s))
   } catch (error) {
     ElMessage.error('获取学生列表失败')
@@ -120,17 +156,14 @@ function calculateRank(student: any): Student {
     const rank = sortedRanks[i]
     const max = rank.max_score
     if (max === null) {
-      // 无上限段位
       if (score >= rank.min_score) {
         currentRank = rank
         nextRank = null
         break
       }
-      // 积分低于此境界最低要求，检查下一境界
       if (i + 1 < sortedRanks.length) {
         continue
       }
-      // 已无更多境界，留在当前（最低）境界
       nextRank = sortedRanks[1] || null
     } else if (score >= rank.min_score && score <= max) {
       currentRank = rank
@@ -158,22 +191,28 @@ function calculateRank(student: any): Student {
 }
 
 function onClassChange() {
+  selectedCourse.value = null
+  fetchCourses()
   fetchStudents()
 }
 
-// 境界标签样式类
-function getRankTagClass(rankName: string): string {
-  // 启灵境等低境界用浅绿系，筑基境及以上用深绿系
-  const highRanks = ['筑基境', '金丹境', '元婴境', '化神境', '炼虚境', '合体境', '大乘境', '渡劫境', '真仙境']
-  return highRanks.includes(rankName) ? 'tag-high' : 'tag-low'
+function onCourseChange() {
+  // 课程筛选可选，当前实现暂时只用班级筛选
 }
 
-// 计算进度条宽度：当前积分/下一境界最低要求 * 100%，最大95%
-// 积分为负或零时返回0（还未进入此境界）
+function openScoreDialog(student: Student) {
+  selectedStudent.value = student
+  dialogVisible.value = true
+}
+
+async function onScoreSuccess() {
+  await fetchStudents()
+}
+
+// 计算进度条宽度
 function getProgressWidth(student: Student): number {
   if (!student.next_rank_name || !student.score_to_next) return 0
   const currentScore = student.current_score
-  // 积分为负或零时，进度视为0
   if (currentScore <= 0) return 0
   const nextRank = ranks.value.find(r => r.name === student.next_rank_name)
   if (!nextRank) return 0
@@ -192,7 +231,7 @@ onMounted(async () => {
 .class-scores {
   padding: 20px;
   min-height: calc(100vh - 60px);
-  background: linear-gradient(135deg, #0d0d1a 0%, #1a0a2e 50%, #0d0d1a 100%);
+  background: linear-gradient(135deg, #0a1a0d 0%, #0d2818 50%, #0a1a0d 100%);
 }
 
 /* 头部区域 */
@@ -205,7 +244,7 @@ onMounted(async () => {
   font-size: 24px;
   color: #fff;
   margin: 0 0 8px;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
 }
 
 .subtitle {
@@ -218,7 +257,7 @@ onMounted(async () => {
   margin: 16px auto;
   height: 2px;
   width: 300px;
-  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+  background: linear-gradient(90deg, transparent, #22c55e, transparent);
 }
 
 /* 筛选栏 */
@@ -233,9 +272,9 @@ onMounted(async () => {
 }
 
 .filter-bar :deep(.el-input__wrapper) {
-  background: rgba(26, 10, 46, 0.95);
-  border: 1px solid rgba(255, 215, 0, 0.4);
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
+  background: rgba(10, 26, 13, 0.95);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.1);
 }
 
 .filter-bar :deep(.el-input__inner) {
@@ -247,18 +286,18 @@ onMounted(async () => {
 }
 
 .filter-bar :deep(.el-select-dropdown__item) {
-  background: rgba(26, 10, 46, 0.95);
+  background: rgba(10, 26, 13, 0.95);
   color: #fff;
 }
 
 .filter-bar :deep(.el-select-dropdown__item.hover),
 .filter-bar :deep(.el-select-dropdown__item:hover) {
-  background: rgba(60, 30, 90, 0.9);
+  background: rgba(34, 197, 94, 0.2);
 }
 
 .filter-bar :deep(.el-select-dropdown) {
-  background: rgba(26, 10, 46, 0.95);
-  border: 1px solid rgba(255, 215, 0, 0.4);
+  background: rgba(10, 26, 13, 0.95);
+  border: 1px solid rgba(34, 197, 94, 0.4);
 }
 
 /* 卡片网格 */
@@ -272,24 +311,25 @@ onMounted(async () => {
 /* 卡片基础样式 */
 .score-card {
   position: relative;
-  background: linear-gradient(145deg, rgba(26, 10, 46, 0.95), rgba(60, 30, 90, 0.9));
-  border: 1px solid rgba(255, 215, 0, 0.4);
+  background: linear-gradient(145deg, rgba(10, 26, 13, 0.95), rgba(34, 197, 94, 0.15));
+  border: 1px solid rgba(34, 197, 94, 0.4);
   border-radius: 16px;
   padding: 24px 16px 20px;
   text-align: center;
   overflow: hidden;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .score-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.15);
 }
 
 /* 最高境界卡片 */
 .score-card.highest-rank {
-  border: 2px solid #ffd700;
-  box-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
+  border: 2px solid #22c55e;
+  box-shadow: 0 0 40px rgba(34, 197, 94, 0.3);
 }
 
 /* 顶部光晕 */
@@ -300,7 +340,7 @@ onMounted(async () => {
   transform: translateX(-50%);
   width: 80px;
   height: 80px;
-  background: radial-gradient(circle, rgba(255, 215, 0, 0.3), transparent);
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.3), transparent);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -310,8 +350,8 @@ onMounted(async () => {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: linear-gradient(135deg, #ffd700, #ffaa00);
-  color: #1a0a2e;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
   font-size: 10px;
   font-weight: 600;
   padding: 3px 8px;
@@ -321,8 +361,8 @@ onMounted(async () => {
 
 /* 境界图片 */
 .rank-image {
-  width: 90px;
-  height: 90px;
+  width: 150px;
+  height: 150px;
   margin: 0 auto 12px;
   position: relative;
   z-index: 1;
@@ -332,7 +372,7 @@ onMounted(async () => {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.5));
+  filter: drop-shadow(0 0 15px rgba(34, 197, 94, 0.5));
 }
 
 .highest-rank .rank-image img {
@@ -403,9 +443,9 @@ onMounted(async () => {
 /* 已达最高境界文字 */
 .achieved-text {
   font-size: 12px;
-  color: #ffd700;
+  color: #22c55e;
   font-weight: 500;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
   margin-top: 8px;
 }
 
@@ -414,7 +454,7 @@ onMounted(async () => {
   margin: 30px auto;
   height: 2px;
   width: 300px;
-  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+  background: linear-gradient(90deg, transparent, #22c55e, transparent);
   position: relative;
   text-align: center;
 }
@@ -425,9 +465,9 @@ onMounted(async () => {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  background: #0d0d1a;
+  background: #0a1a0d;
   padding: 0 15px;
-  color: #ffd700;
+  color: #22c55e;
   font-size: 14px;
 }
 </style>

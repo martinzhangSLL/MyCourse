@@ -82,12 +82,6 @@ const routes: RouteRecordRaw[] = [
         redirect: { name: 'TeacherDashboard' }
       },
       {
-        path: 'scores',
-        name: 'TeacherScores',
-        component: () => import('@/views/teacher/Scores.vue'),
-        meta: { requiresAuth: true, role: 'teacher' }
-      },
-      {
         path: 'rankings',
         name: 'TeacherRankings',
         component: () => import('@/views/teacher/Rankings.vue'),

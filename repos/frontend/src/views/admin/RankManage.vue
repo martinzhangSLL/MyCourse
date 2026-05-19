@@ -72,11 +72,8 @@
           <div class="upload-row">
             <el-input v-model="form.image_url" placeholder="/pics/xxx.png" style="flex: 1" />
             <el-upload
-              action="/api/upload"
-              :headers="{ Authorization: token }"
+              :http-request="handleUpload"
               :show-file-list="false"
-              :on-success="handleUploadSuccess"
-              :on-error="handleUploadError"
               accept="image/png,image/jpeg,image/gif"
             >
               <el-button type="primary" plain>上传图片</el-button>
@@ -105,6 +102,25 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
 
+async function handleUpload(option) {
+  const { file, onSuccess, onError } = option
+  const formData = new FormData()
+  formData.append('file', file)
+
+  try {
+    const response = await api.post('/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    form.image_url = response.data.url
+    ElMessage.success('上传成功')
+    onSuccess(response)
+  } catch (err) {
+    console.error('Upload failed:', err)
+    ElMessage.error('上传失败')
+    onError(err)
+  }
+}
+
 interface RankItem {
   id: number
   name: string
@@ -130,17 +146,6 @@ const form = reactive({
 })
 
 const formRef = ref()
-
-const token = localStorage.getItem('token')
-
-function handleUploadSuccess(response) {
-  form.image_url = response.url
-  ElMessage.success('上传成功')
-}
-
-function handleUploadError() {
-  ElMessage.error('上传失败')
-}
 
 onMounted(async () => {
   await fetchRanks()
