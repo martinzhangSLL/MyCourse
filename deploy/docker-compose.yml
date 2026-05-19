@@ -20,6 +20,7 @@ services:
     environment:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
       - DATABASE_URL=sqlite:////var/www/mycourse/db/mycourse.db
+      - UPLOAD_DIR=/app/pics
     volumes:
       - /var/www/mycourse/db:/var/www/mycourse/db
       - /var/www/mycourse/pics:/app/pics
@@ -46,6 +47,7 @@ services:
     environment:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
       - DATABASE_URL=sqlite:////var/www/mycourse/db/mycourse.db
+      - UPLOAD_DIR=/app/pics
     volumes:
       - /var/www/mycourse/db:/var/www/mycourse/db
       - /var/www/mycourse/pics:/app/pics

@@ -14,8 +14,8 @@ from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/api", tags=["upload"])
 
-# 上传目录
-UPLOAD_DIR = "/app/pics"
+# 上传目录：从环境变量读取，若未设置则使用默认值
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/app/pics")
 ALLOWED_TYPES = ["image/png", "image/jpeg", "image/gif"]
 MAX_SIZE = 5 * 1024 * 1024  # 5MB
 
