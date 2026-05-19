@@ -36,7 +36,8 @@ def init_ranks():
             {"name": "逐风境", "min_score": 101, "max_score": 200, "image_url": "/pics/3.png", "display_order": 3},
             {"name": "凌云境", "min_score": 201, "max_score": 300, "image_url": "/pics/4.png", "display_order": 4},
             {"name": "摘星境", "min_score": 301, "max_score": 400, "image_url": "/pics/5.png", "display_order": 5},
-            {"name": "扶摇境", "min_score": 401, "max_score": None, "image_url": "/pics/6.png", "display_order": 6},
+            {"name": "扶摇境", "min_score": 401, "max_score": 500, "image_url": "/pics/6.png", "display_order": 6},
+            {"name": "筑基境", "min_score": 501, "max_score": None, "image_url": "/pics/7.png", "display_order": 7},
         ]
 
         for r in ranks:
