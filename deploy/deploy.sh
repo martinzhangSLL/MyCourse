@@ -80,12 +80,12 @@ deploy() {
         DEPLOY_DIR="/var/www/mycourse"
 
         # 创建目录结构
-        log_info "创建目录结构..."
+        echo "[INFO] 创建目录结构..."
         mkdir -p ${DEPLOY_DIR}/{db,logs,data,docker,nginx}
 
         # 检查 Docker 是否安装
         if ! command -v docker &> /dev/null; then
-            log_info "安装 Docker..."
+            echo "[INFO] 安装 Docker..."
             curl -fsSL https://get.docker.com | sh
             systemctl start docker
             systemctl enable docker
@@ -93,7 +93,7 @@ deploy() {
 
         # 检查 Docker Compose 是否安装
         if ! command -v docker-compose &> /dev/null; then
-            log_info "安装 Docker Compose..."
+            echo "[INFO] 安装 Docker Compose..."
             curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
             chmod +x /usr/local/bin/docker-compose
         fi
@@ -102,43 +102,28 @@ deploy() {
         systemctl start docker 2>/dev/null || true
         systemctl enable docker 2>/dev/null || true
 
-        log_info "Docker 环境准备完成"
+        echo "[INFO] Docker 环境准备完成"
 ENDSSH
 
     # 同步文件到服务器
     log_info "同步部署文件到服务器..."
-    rsync -avz -e "ssh -p ${SSH_PORT}" \
-        --exclude 'node_modules' \
-        --exclude '__pycache__' \
-        --exclude '.pytest_cache' \
-        --exclude '*.pyc' \
-        --exclude '.git' \
-        ./ ${SERVER_USER}@${SERVER_IP}:${DEPLOY_DIR}/
+    # 只复制关键文件，用 git pull 替代
+    ssh -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} "cd ${DEPLOY_DIR} && git pull origin main"
 
     # 在服务器上执行部署
     ssh -p ${SSH_PORT} ${SERVER_USER}@${SERVER_IP} << 'ENDSSH'
         set -e
         cd /var/www/mycourse
 
-        # 设置环境变量（首次需要手动设置）
-        if [ -z "$JWT_SECRET_KEY" ]; then
-            echo "请设置 JWT_SECRET_KEY 环境变量:"
-            echo "export JWT_SECRET_KEY=<your-secret-key>"
-            echo ""
-            echo "建议使用:"
-            # openssl rand -base64 32
-            echo "export JWT_SECRET_KEY=$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64)"
-        fi
-
         # 停止旧容器
-        log_info "停止旧容器..."
+        echo "[INFO] 停止旧容器..."
         docker-compose down 2>/dev/null || true
 
         # 构建并启动新容器
-        log_info "构建 Docker 镜像..."
+        echo "[INFO] 构建 Docker 镜像..."
         docker-compose build --no-cache
 
-        log_info "启动服务..."
+        echo "[INFO] 启动服务..."
         docker-compose up -d
 
         # 等待服务启动
@@ -147,8 +132,8 @@ ENDSSH
         # 检查容器状态
         docker-compose ps
 
-        log_success "部署完成!"
-        log_info "访问 http://47.93.44.227 查看应用"
+        echo "[SUCCESS] 部署完成!"
+        echo "[INFO] 访问 http://47.93.44.227 查看应用"
     ENDSSH
 
     log_success "部署完成!"
@@ -242,7 +227,6 @@ ENDSSH
 main() {
     # 检查必要的命令
     check_command ssh
-    check_command rsync
 
     if [ $# -eq 0 ]; then
         usage
