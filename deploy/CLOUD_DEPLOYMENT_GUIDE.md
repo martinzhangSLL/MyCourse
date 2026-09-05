@@ -341,7 +341,7 @@ ssh root@47.93.44.227 "cp /var/lib/docker/volumes/mycourse_db-data/_data/mycours
 | 用户名 | root |
 | 项目目录 | /var/www/mycourse |
 | 数据库 | /var/www/mycourse/db/mycourse.db |
-| 初始管理员 | admin / admin123 |
+| 初始管理员 | admin / MarT17! |
 
 ### Docker 服务
 
